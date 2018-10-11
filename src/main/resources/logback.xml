@@ -1,0 +1,33 @@
+<!--
+    packagingData="true" SHOULD BE ONLY USED WHEN NECESSARY! Its EXPENSIVE!
+    debug="true" is for logback debug
+    OnConsoleStatusListener is for helping in logback debugging
+-->
+<configuration debug="true" packagingData="true">
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+    <!--
+        in the absence of the class attribute, assume ch.qos.logback.core.hook.DefaultShutdownHook
+        for web applications, it will use WebShutdownHook
+    -->
+    <shutdownHook/>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.jline" level="DEBUG" additivity="false">
+        <appender-ref ref="STDOUT" />
+    </logger>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
