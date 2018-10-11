@@ -1,13 +1,23 @@
 package com.itquasar.multiverse.proton;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.*;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Console {
+public class Console implements Runnable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Console.class);
 
     private final AtomicBoolean passwordInput = new AtomicBoolean(false);
 
@@ -16,16 +26,36 @@ public class Console {
 
     private final ConsoleOptions consoleOptions;
 
+    private final CommandManager commandManager;
+
     private int line = 0;
 
-    public Console(LineReader lineReader, MaskingCallback maskingCallback) {
-        this(lineReader, maskingCallback, new ConsoleOptions());
+    public Console(CommandManager commandManager, LineReader lineReader, MaskingCallback maskingCallback) {
+        this(commandManager, lineReader, maskingCallback, new ConsoleOptions());
     }
 
-    public Console(LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
+    public Console(CommandManager commandManager, LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
         this.lineReader = lineReader;
         this.maskingCallback = new DynamicMaskingCallback(this.passwordInput, maskingCallback);
         this.consoleOptions = consoleOptions;
+        this.commandManager = commandManager;
+    }
+
+
+    public ConsoleOptions getOptions() {
+        return consoleOptions;
+    }
+
+    public LineReader getLineReader() {
+        return lineReader;
+    }
+
+    public Map<String, Command> getCommands() {
+        return Collections.unmodifiableMap(commandManager.getCommands());
+    }
+
+    public Optional<Command> getCommand(String name) {
+        return Optional.ofNullable(commandManager.getCommands().get(name));
     }
 
     public String readPassword() {
@@ -50,13 +80,12 @@ public class Console {
         String line = null;
         try {
             line = this.lineReader.readLine(prompt(), rigthPrompt(), this.maskingCallback, buffer());
-            intercept(line);
         } catch (UserInterruptException e) {
-            e.printStackTrace();
+            LOGGER.debug("User interruption! Exiting!");
         } catch (EndOfFileException e) {
-            e.printStackTrace();
+            LOGGER.warn("Nothing more to read! Exiting!");
             // Force system exit
-            DefaultCommand.EXIT.getFunction().accept(this.lineReader, new ConsoleOptions());
+            getCommand("exit").ifPresent(it -> it.invoke((String) null, this));
         }
         return line;
     }
@@ -77,12 +106,52 @@ public class Console {
         return null;
     }
 
-    private String intercept(String line) {
+    private Optional execute(final ParsedLine parsedLine) {
         if (!this.passwordInput.get()) {
-            this.lineReader.getHistory().add(line);
-            line = line.toLowerCase().trim();
-            DefaultCommand.invoke(line, this.lineReader, this.consoleOptions);
+            this.lineReader.getHistory().add(parsedLine.line());
+            Optional<Command> command = getCommand(parsedLine.word());
+            if (!command.isPresent()) {
+                this.getLineReader().getTerminal().writer().println("Command " + parsedLine.word() + " not found!");
+            }
+            return command.flatMap(
+                    it -> it.invoke(parsedLine, this)
+            );
         }
-        return line;
+        return Optional.empty();
+    }
+
+    @Override
+    public void run() {
+        boolean running = true;
+        PrintWriter writer = lineReader.getTerminal().writer();
+        while (running) {
+            try {
+                ParsedLine parsedLine = this.readParsedLine();
+                if (!parsedLine.word().trim().isEmpty()) {
+                    this.execute(parsedLine).ifPresent(it -> nicePrint(0, writer, it));
+                }
+            } catch (UserInterruptException ex) {
+                running = false;
+            }
+        }
+    }
+
+    // FIXME
+    // usar service provider para prints por classe
+    // add option to use spaces
+    private void nicePrint(int level, PrintWriter writer, Object object) {
+        if (object instanceof List) {
+            for (Object item : (List) object) {
+                nicePrint(level + 1, writer, item);
+            }
+        } else {
+            writer.println(
+                    StringUtils.leftPad(
+                            object == null ? "<<NULL>>" : object.toString(),
+                            level,
+                            "\t"
+                    )
+            );
+        }
     }
 }
