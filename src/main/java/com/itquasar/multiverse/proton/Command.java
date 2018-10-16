@@ -2,10 +2,14 @@ package com.itquasar.multiverse.proton;
 
 import com.google.common.base.CaseFormat;
 import org.jline.reader.ParsedLine;
+import org.slf4j.ext.XLogger;
+import org.slf4j.ext.XLoggerFactory;
 
 import java.util.Optional;
 
 public interface Command<T> {
+
+    XLogger LOGGER = XLoggerFactory.getXLogger(Command.class);
 
     String EMPTY_STRING = "";
 

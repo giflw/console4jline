@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,6 +29,8 @@ public class Console implements Runnable {
 
     private final PrettyPrinterManager prettyPrinterManager;
 
+    private final Map<String, Object> env = new HashMap();
+
     private int line = 0;
 
     public Console(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback) {
@@ -40,6 +43,17 @@ public class Console implements Runnable {
         this.consoleOptions = consoleOptions;
         this.commandManager = commandManager;
         this.prettyPrinterManager = prettyPrinterManager;
+
+        HashMap<Object, Object> system = new HashMap<>();
+        this.env.put("system", system);
+
+        system.put("env", new HashMap<>(System.getenv()));
+
+        HashMap<String, Object> properties = new HashMap<>();
+        for (String key : System.getProperties().stringPropertyNames()) {
+            properties.put(key, System.getProperty(key));
+        }
+        system.put("properties", properties);
     }
 
 
@@ -57,6 +71,10 @@ public class Console implements Runnable {
 
     public Optional<Command> getCommand(String name) {
         return Optional.ofNullable(commandManager.getCommands().get(name));
+    }
+
+    public Map<String, Object> getEnv() {
+        return env;
     }
 
     public String readPassword() {
@@ -84,7 +102,7 @@ public class Console implements Runnable {
         } catch (UserInterruptException e) {
             LOGGER.debug("User interruption! Exiting!");
         } catch (EndOfFileException e) {
-            LOGGER.warn("Nothing more to read! Exiting!");
+            LOGGER.debug("Nothing more to read! Exiting!");
             // Force system exit
             getCommand("exit").ifPresent(it -> it.invoke((String) null, this));
         }
