@@ -6,7 +6,7 @@ import org.slf4j.ext.XLoggerFactory;
 
 import java.io.PrintWriter;
 import java.lang.reflect.ParameterizedType;
-import java.util.stream.Stream;
+import java.util.Map;
 
 /**
  * @param <T> Type supported for String conversion
@@ -80,22 +80,12 @@ public abstract class PrettyPrinter<T> {
         Class clazz = null;
 
         if (object != null) {
-            Class[] classes = Stream.of(
-                    new Class[]{object.getClass()},
-                    object.getClass().getInterfaces(),
-                    object.getClass().getClasses(),
-                    object.getClass().getDeclaredClasses()
-            ).flatMap(Stream::of)
-                    .toArray(Class[]::new);
-            LOGGER.trace("Hierarquical classes found: {}", classes);
-            for (Class classe : classes) {
-                LOGGER.trace("Searching pretty printer for {}", classe);
-                prettyPrinter = manager.getPrettyPrinters().get(classe);
-                if (prettyPrinter != null) {
-                    clazz = classe;
-                    break;
-                }
-            }
+            prettyPrinter = manager.getPrettyPrinters().entrySet().stream()
+                    .filter(it -> it.getKey().isInstance(object))
+                    .findFirst()
+                    .map(Map.Entry::getValue)
+                    // FIXME to use a default pretty printer, and return strings (maybe using a special object
+                    .orElse(null);
         }
 
         if (prettyPrinter != null) {
