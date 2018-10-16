@@ -30,6 +30,9 @@ public final class CommandManager {
 
     public Map<String, Command> getCommands(boolean refresh) {
         if (refresh) {
+            if(!packageToLoad.isEmpty()) {
+                LOGGER.warn("Loading commands from package {}", packageToLoad);
+            }
             Map<String, Command> commandMap = new HashMap<>();
             Iterator<Command> iterator = loader.iterator();
             while (iterator.hasNext()) {
