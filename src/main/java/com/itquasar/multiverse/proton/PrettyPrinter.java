@@ -18,7 +18,7 @@ public abstract class PrettyPrinter<T> {
     /**
      * 4 space characters
      */
-    public static final String DEFAULT_SPACER = "    ";
+    public static final String DEFAULT_SPACER = "  ";
 
     public static final Byte DEFAULT_PRIORITY = Byte.MIN_VALUE;
 
@@ -75,14 +75,16 @@ public abstract class PrettyPrinter<T> {
      * @param object      Object to be printed.
      */
     public void prettyPrint(int level, String spacer, PrintWriter printWriter, T object, PrettyPrinterManager manager) {
-        LOGGER.entry(level, spacer, printWriter, object, manager);
+        LOGGER.entry(level, spacer, printWriter, object != null ? object.getClass() : "<<NULL>>", manager);
         PrettyPrinter prettyPrinter = null;
         Class clazz = null;
 
         if (object != null) {
             Class[] classes = Stream.of(
+                    new Class[]{object.getClass()},
                     object.getClass().getInterfaces(),
-                    object.getClass().getClasses()
+                    object.getClass().getClasses(),
+                    object.getClass().getDeclaredClasses()
             ).flatMap(Stream::of)
                     .toArray(Class[]::new);
             LOGGER.trace("Hierarquical classes found: {}", classes);
@@ -102,7 +104,7 @@ public abstract class PrettyPrinter<T> {
         } else {
             String toString = object == null ? "<<NULL>>" : object.toString();
             LOGGER.trace("{}: Falling back to toString()", clazz);
-            toString = StringUtils.leftPad(toString, level, spacer);
+            toString = StringUtils.leftPad("", spacer.length() * level, spacer) + toString;
             printWriter.println(toString);
         }
         LOGGER.exit();
