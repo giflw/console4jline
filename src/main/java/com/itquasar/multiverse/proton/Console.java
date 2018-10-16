@@ -1,5 +1,6 @@
 package com.itquasar.multiverse.proton;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jline.reader.*;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -8,10 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Console implements Runnable {
@@ -104,7 +102,7 @@ public class Console implements Runnable {
         } catch (EndOfFileException e) {
             LOGGER.debug("Nothing more to read! Exiting!");
             // Force system exit
-            getCommand("exit").ifPresent(it -> it.invoke((String) null, this));
+            getCommand("exit").ifPresent(it -> it.invoke(null, this, Optional.empty()));
         }
         return line;
     }
@@ -128,13 +126,44 @@ public class Console implements Runnable {
     private Optional execute(final ParsedLine parsedLine) {
         if (!this.passwordInput.get()) {
             this.lineReader.getHistory().add(parsedLine.line());
-            Optional<Command> command = getCommand(parsedLine.word());
-            if (!command.isPresent()) {
-                this.getLineReader().getTerminal().writer().println("Command " + parsedLine.word() + " not found!");
+
+            List<String> words = parsedLine.words();
+
+            List<Integer> pipes = new LinkedList<>();
+            pipes.add(-1);
+
+            for (int i = 0; i < words.size(); i++) {
+                if ("|".equals(words.get(i))) {
+                    pipes.add(i);
+                }
             }
-            return command.flatMap(
-                    it -> it.invoke(parsedLine, this)
-            );
+
+            List<Pair<Command, List<String>>> commands = new LinkedList<>();
+
+            for (int i = 0; i < pipes.size(); i++) {
+                int fromIndex = pipes.get(i) + 1;
+                int toIndex = i >= pipes.size() - 1 ? words.size() : pipes.get(i + 1);
+                List<String> subList = words.subList(fromIndex, toIndex);
+                LOGGER.debug("Spliting command line from {} to {}: {}", fromIndex, toIndex, subList);
+
+                String cmdName = subList.get(0);
+                Optional<Command> command = getCommand(cmdName);
+                if (!command.isPresent()) {
+                    this.getLineReader().getTerminal().writer().println("Command " + cmdName + " not found!");
+                    return Optional.empty();
+                } else {
+                    commands.add(Pair.of(command.get(), subList));
+                }
+            }
+
+            LOGGER.trace("Commands: {}", commands);
+
+            Optional previousOutput = Optional.empty();
+            for (Pair<Command, List<String>> pair : commands) {
+                previousOutput = pair.getLeft().invoke(pair.getRight(), this, previousOutput);
+            }
+
+            return previousOutput;
         }
         return Optional.empty();
     }

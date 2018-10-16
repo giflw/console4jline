@@ -10,6 +10,8 @@ import java.util.Optional;
 public class Echo implements Command<String> {
 
     @Override
+    public Optional<String> invoke(List<String> parsedLine, Console console, Optional previousOutput) {
+        return Optional.ofNullable(
     public Optional<String> invoke(ParsedLine parsedLine, Console console) {
         System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());
         System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());
