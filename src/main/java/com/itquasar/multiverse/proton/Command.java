@@ -1,5 +1,6 @@
 package com.itquasar.multiverse.proton;
 
+import com.google.common.base.CaseFormat;
 import org.jline.reader.ParsedLine;
 
 import java.util.Optional;
@@ -8,11 +9,13 @@ public interface Command<T> {
 
     String EMPTY_STRING = "";
 
-    String getName();
+    default String getName() {
+        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, this.getClass().getSimpleName());
+    }
 
     Optional<T> invoke(ParsedLine parsedLine, Console console);
 
-    default Optional<T> invoke(String line, Console console)  {
+    default Optional<T> invoke(String line, Console console) {
         return invoke(console.getLineReader().getParser().parse(line, 0), console);
     }
 
