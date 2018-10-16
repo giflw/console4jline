@@ -15,11 +15,6 @@ import java.util.Optional;
 public class History implements Command<List<Entry>> {
 
     @Override
-    public String getName() {
-        return "history";
-    }
-
-    @Override
     public Optional<List<Entry>> invoke(ParsedLine parsedLine, Console console) {
         LineReader lineReader = console.getLineReader();
         Terminal terminal = lineReader.getTerminal();

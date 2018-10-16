@@ -10,11 +10,6 @@ import java.util.Optional;
 public class Echo implements Command<String> {
 
     @Override
-    public String getName() {
-        return "echo";
-    }
-
-    @Override
     public Optional<String> invoke(ParsedLine parsedLine, Console console) {
         System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());
         System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());

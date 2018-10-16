@@ -14,11 +14,6 @@ public class Log implements Command<String> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Log.class);
 
     @Override
-    public String getName() {
-        return "log";
-    }
-
-    @Override
     public Optional<String> invoke(ParsedLine parsedLine, Console console) {
         // FIXME support for levels (--warning, --error, --trace --debug, --info)
         String msg = null;

@@ -10,11 +10,6 @@ import java.util.Optional;
 public class Alias implements Command<Void> {
 
     @Override
-    public String getName() {
-        return "alias";
-    }
-
-    @Override
     public Optional<Void> invoke(ParsedLine parsedLine, Console console) {
         // alias ll = ls - lah
         //
