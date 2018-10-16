@@ -3,8 +3,8 @@
     debug="true" is for logback debug
     OnConsoleStatusListener is for helping in logback debugging
 -->
-<configuration debug="true" packagingData="true">
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+<configuration debug="false" packagingData="true">
+    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
     <!--
         in the absence of the class attribute, assume ch.qos.logback.core.hook.DefaultShutdownHook
         for web applications, it will use WebShutdownHook
@@ -15,19 +15,34 @@
         <resetJUL>true</resetJUL>
     </contextListener>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoders are assigned the type
-             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+    <appender name="STDOUT_COLOR" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n</pattern>
+            <!--<pattern>[%date] %highlight([%level]) [%logger{10} %file:%line] %msg%n</pattern>-->
+        </encoder>
+    </appender>
+    <appender name="STDOUT_NOCOLOR" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="org.jline" level="DEBUG" additivity="false">
-        <appender-ref ref="STDOUT" />
+
+    <logger name="com.itquasar.multiverse.proton" level="TRACE" additivity="false">
+        <if condition='isDefined("nocolor")'>
+            <then>
+                <appender-ref ref="STDOUT_NOCOLOR"/>
+            </then>
+            <else>
+                <appender-ref ref="STDOUT_COLOR"/>
+            </else>
+        </if>
     </logger>
 
-    <root level="DEBUG">
-        <appender-ref ref="STDOUT" />
+    <logger name="ch.qos.logback" level="ERROR"/>
+    <logger name="org.jline" level="INFO" additivity="false"/>
+
+    <root level="WARNING">
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
