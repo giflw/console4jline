@@ -1,6 +1,5 @@
 package com.itquasar.multiverse.proton;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jline.reader.*;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -10,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,17 +26,20 @@ public class Console implements Runnable {
 
     private final CommandManager commandManager;
 
+    private final PrettyPrinterManager prettyPrinterManager;
+
     private int line = 0;
 
-    public Console(CommandManager commandManager, LineReader lineReader, MaskingCallback maskingCallback) {
-        this(commandManager, lineReader, maskingCallback, new ConsoleOptions());
+    public Console(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback) {
+        this(commandManager, prettyPrinterManager, lineReader, maskingCallback, new ConsoleOptions());
     }
 
-    public Console(CommandManager commandManager, LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
+    public Console(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
         this.lineReader = lineReader;
         this.maskingCallback = new DynamicMaskingCallback(this.passwordInput, maskingCallback);
         this.consoleOptions = consoleOptions;
         this.commandManager = commandManager;
+        this.prettyPrinterManager = prettyPrinterManager;
     }
 
 
@@ -128,30 +129,13 @@ public class Console implements Runnable {
             try {
                 ParsedLine parsedLine = this.readParsedLine();
                 if (!parsedLine.word().trim().isEmpty()) {
-                    this.execute(parsedLine).ifPresent(it -> nicePrint(0, writer, it));
+                    this.execute(parsedLine).ifPresent(
+                            it -> prettyPrinterManager.prettyPrint(0, PrettyPrinter.DEFAULT_SPACER, writer, it)
+                    );
                 }
             } catch (UserInterruptException ex) {
                 running = false;
             }
-        }
-    }
-
-    // FIXME
-    // usar service provider para prints por classe
-    // add option to use spaces
-    private void nicePrint(int level, PrintWriter writer, Object object) {
-        if (object instanceof List) {
-            for (Object item : (List) object) {
-                nicePrint(level + 1, writer, item);
-            }
-        } else {
-            writer.println(
-                    StringUtils.leftPad(
-                            object == null ? "<<NULL>>" : object.toString(),
-                            level,
-                            "\t"
-                    )
-            );
         }
     }
 }

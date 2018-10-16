@@ -42,8 +42,8 @@ public class Proton implements Runnable {
 
     private final Console console;
 
-    public Proton(CommandManager commandManager, LineReader lineReader) {
-        this.console = new Console(commandManager, lineReader, new SimpleMaskingCallback(ATOM));
+    public Proton(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader) {
+        this.console = new Console(commandManager, prettyPrinterManager, lineReader, new SimpleMaskingCallback(ATOM));
     }
 
     public static void main(String[] args) throws IOException {
@@ -63,7 +63,8 @@ public class Proton implements Runnable {
                 .completer(new StringsCompleter(commandManager.getComandNames()))
                 .variable(LineReader.HISTORY_FILE, "/tmp/" + terminal.getName().replace(" ", "_") + ".history")
                 .build();
-        new Proton(commandManager, lineReader).run();
+        PrettyPrinterManager prettyPrinterManager = new PrettyPrinterManager();
+        new Proton(commandManager, prettyPrinterManager, lineReader).run();
     }
 
     @Override
