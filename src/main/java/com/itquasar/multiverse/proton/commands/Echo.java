@@ -2,20 +2,19 @@ package com.itquasar.multiverse.proton.commands;
 
 import com.itquasar.multiverse.proton.Command;
 import com.itquasar.multiverse.proton.Console;
-import org.jline.reader.ParsedLine;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
 
-// FIXME TEST
 public class Echo implements Command<String> {
 
     @Override
     public Optional<String> invoke(List<String> parsedLine, Console console, Optional previousOutput) {
         return Optional.ofNullable(
-    public Optional<String> invoke(ParsedLine parsedLine, Console console) {
-        System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());
-        System.out.println(parsedLine.wordCursor() + " | " + parsedLine.wordIndex() + " --> " + parsedLine.word());
-        String str = parsedLine.line();
-        return Optional.ofNullable(str);
+                previousOutput.orElse(
+                        StringUtils.join(parsedLine.subList(1, parsedLine.size()), " ")
+                ).toString()
+        );
     }
 }
