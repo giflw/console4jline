@@ -1,2 +1,3 @@
+com.itquasar.multiverse.proton.printers.CollectionPrettyPrinter
 com.itquasar.multiverse.proton.printers.HistoryEntryPrettyPrinter
-com.itquasar.multiverse.proton.printers.ListPrettyPrinter
+com.itquasar.multiverse.proton.printers.MapPrettyPrinter
