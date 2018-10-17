@@ -2,41 +2,25 @@ package com.itquasar.multiverse.proton.commands;
 
 import com.itquasar.multiverse.proton.Command;
 import com.itquasar.multiverse.proton.Console;
+import picocli.CommandLine;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@CommandLine.Command
 public class Env implements Command<Object> {
 
-    // FIXME add error support
-    @Override
-    public Optional<Object> invoke(List<String> parsedLine, Console console, Optional previousOutput) {
-        LOGGER.trace("env parsed line: {}", parsedLine);
-        if (parsedLine.size() > 1) {
-            switch (parsedLine.get(1).toLowerCase()) {
-                case "set":
-                    return Optional.ofNullable(
-                            set(
-                                    parsedLine.size() > 2 ? parsedLine.get(2) : "",
-                                    parsedLine.size() > 3 ? parsedLine.get(3) : "null",
-                                    console,
-                                    previousOutput
-                            )
-                    );
-                case "get":
-                    return Optional.ofNullable(
-                            get(
-                                    parsedLine.subList(2, parsedLine.size()),
-                                    console
-                            )
-                    );
-            }
-        }
-        return Optional.of(console.getEnv());
-    }
+    @CommandLine.Parameters(index = "0")
+    private Action action = Action.none;
 
-    private Object get(List<String> subList, Console console) {
+    @CommandLine.Parameters(defaultValue = "")
+    private List<String> keyPath;
+
+    @CommandLine.Option(names = {"-v"}, defaultValue = "null")
+    private Object value;
+
+    private static Object get(List<String> subList, Console console) {
         LOGGER.debug("env get {}", subList);
         Object value = null;
         Map<String, Object> env = console.getEnv();
@@ -55,16 +39,56 @@ public class Env implements Command<Object> {
         return value;
     }
 
-    private String set(String key, String value, Console console, Optional previousOutput) {
+    // FIXME add error handling
+    private static String set(List<String> keys, Object value, Console console, Optional previousOutput) {
+        Map<String, Object> parent = console.getEnv();
+        int depth = 0;
+        while (depth < keys.size() - 1) {
+            parent = (Map) get(keys.subList(0, depth), console);
+        }
+
+        String key = keys.get(keys.size() - 1);
         if (!key.isEmpty()) {
             if (value.equals("null") || (value.equals("--") && !previousOutput.isPresent())) {
-                console.getEnv().remove(key);
+                parent.remove(key);
             } else if (value.equals("--")) {
-                console.getEnv().put(key, previousOutput.get());
+                parent.put(key, previousOutput.get());
             } else {
-                console.getEnv().put(key, value);
+                parent.put(key, value);
             }
         }
         return "";
     }
+
+    // FIXME add error support
+    @Override
+    public Optional invoke(CommandLine commandLine, Console console, Optional<?> previousOutput) {
+        LOGGER.trace("env {}: {} -> {}", action, keyPath, value);
+        Optional result = null;
+        switch (action) {
+//            case set:
+//                result = Optional.ofNullable(
+//                        set(
+//                                keyPath, value, console, previousOutput
+//                        )
+//                );
+//                break;
+//            case get:
+//                result = Optional.ofNullable(
+//                        get(keyPath, console)
+//                );
+//                break;
+            default:
+                action = Action.none;
+                result = Optional.empty();//of(console.getEnv());
+        }
+        keyPath.clear();
+
+        return result;
+    }
+
+    public enum Action {
+        get, set, none
+    }
+
 }

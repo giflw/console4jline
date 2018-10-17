@@ -1,11 +1,11 @@
 package com.itquasar.multiverse.proton;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jline.reader.*;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
@@ -63,12 +63,11 @@ public class Console implements Runnable {
         return lineReader;
     }
 
-    public Map<String, Command> getCommands() {
-        return Collections.unmodifiableMap(commandManager.getCommands());
-    }
-
     public Optional<Command> getCommand(String name) {
-        return Optional.ofNullable(commandManager.getCommands().get(name));
+        CommandLine commandLine = commandManager.getCommandLine().getSubcommands().get(name);
+        return commandLine != null
+                ? Optional.of((Command) commandLine.getCommand())
+                : Optional.empty();
     }
 
     public Map<String, Object> getEnv() {
@@ -138,29 +137,26 @@ public class Console implements Runnable {
                 }
             }
 
-            List<Pair<Command, List<String>>> commands = new LinkedList<>();
+            List<String[]> commands = new LinkedList<>();
 
             for (int i = 0; i < pipes.size(); i++) {
                 int fromIndex = pipes.get(i) + 1;
                 int toIndex = i >= pipes.size() - 1 ? words.size() : pipes.get(i + 1);
                 List<String> subList = words.subList(fromIndex, toIndex);
                 LOGGER.debug("Spliting command line from {} to {}: {}", fromIndex, toIndex, subList);
-
-                String cmdName = subList.get(0);
-                Optional<Command> command = getCommand(cmdName);
-                if (!command.isPresent()) {
-                    this.getLineReader().getTerminal().writer().println("Command " + cmdName + " not found!");
-                    return Optional.empty();
-                } else {
-                    commands.add(Pair.of(command.get(), subList));
-                }
+                commands.add(subList.toArray(new String[0]));
             }
 
             LOGGER.trace("Commands: {}", commands);
 
             Optional previousOutput = Optional.empty();
-            for (Pair<Command, List<String>> pair : commands) {
-                previousOutput = pair.getLeft().invoke(pair.getRight(), this, previousOutput);
+            for (String[] commandLine : commands) {
+                CommandLine.ParseResult parseResult = commandManager.getCommandLine().parseArgs(commandLine);
+                if (parseResult.hasSubcommand()) {
+                    CommandLine subCommandLine = parseResult.asCommandLineList().get(1);
+                    Command command = subCommandLine.getCommand();
+                    previousOutput = command.invoke(subCommandLine, this, previousOutput);
+                }
             }
 
             return previousOutput;

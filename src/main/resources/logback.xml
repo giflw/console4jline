@@ -27,6 +27,16 @@
         </encoder>
     </appender>
 
+    <appender name="PROTON_LOG_COMMAND" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%highlight(%-5level)] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.itquasar.multiverse.proton.console.log" level="TRACE" additivity="false">
+        <appender-ref ref="PROTON_LOG_COMMAND" />
+    </logger>
+
 
     <logger name="com.itquasar.multiverse.proton" level="TRACE" additivity="false">
         <if condition='isDefined("nocolor")'>
@@ -38,6 +48,8 @@
             </else>
         </if>
     </logger>
+
+    <logger name="com.itquasar.multiverse.proton.PrettyPrinter" level="INFO"/>
 
     <logger name="ch.qos.logback" level="ERROR"/>
     <logger name="org.jline" level="INFO" additivity="false"/>

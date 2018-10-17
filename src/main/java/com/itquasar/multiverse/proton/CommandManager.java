@@ -2,8 +2,11 @@ package com.itquasar.multiverse.proton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 public final class CommandManager {
 
@@ -13,7 +16,7 @@ public final class CommandManager {
 
     private final String packageToLoad;
 
-    private Map<String, Command> commandMap;
+    private CommandLine commandLine;
 
     public CommandManager() {
         this("");
@@ -21,35 +24,42 @@ public final class CommandManager {
 
     public CommandManager(String packageToLoad) {
         this.packageToLoad = packageToLoad;
-        this.getCommands(true);
+        this.getCommandLine(true);
     }
 
-    public Map<String, Command> getCommands() {
-        return getCommands(false);
+    public CommandLine getCommandLine() {
+        return getCommandLine(false);
     }
 
-    public Map<String, Command> getCommands(boolean refresh) {
+    public CommandLine getCommandLine(boolean refresh) {
         if (refresh) {
-            if(!packageToLoad.isEmpty()) {
+            if (!packageToLoad.isEmpty()) {
                 LOGGER.warn("Loading commands from package {}", packageToLoad);
             }
-            Map<String, Command> commandMap = new HashMap<>();
+
+            CommandLine.Model.CommandSpec commandSpec = CommandLine.Model.CommandSpec.create();
+            commandSpec.mixinStandardHelpOptions(true);
+
             Iterator<Command> iterator = loader.iterator();
             while (iterator.hasNext()) {
                 Command command = iterator.next();
                 if (packageToLoad.isEmpty() || command.getClass().getPackage().getName().equals(packageToLoad)) {
                     LOGGER.debug("Registering command {} [{}]", command.getName(), command.getClass().getCanonicalName());
-                    commandMap.put(command.getName(), command);
+                    commandSpec.addSubcommand(
+                            command.getName(),
+                            new CommandLine(Command.wrapIfNecessary(command))
+                    );
                 } else {
                     LOGGER.warn("Skipping {} [{}]", command.getName(), command.getClass().getCanonicalName());
                 }
             }
-            this.commandMap = commandMap;
+            this.commandLine = new CommandLine(commandSpec);
         }
-        return commandMap;
+        return commandLine;
     }
 
+    // FIXME create completer to jline using picocli API
     public Set<String> getComandNames() {
-        return this.commandMap.keySet();
+        return this.commandLine.getCommandSpec().subcommands().keySet();
     }
 }
