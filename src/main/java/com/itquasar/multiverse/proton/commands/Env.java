@@ -2,13 +2,14 @@ package com.itquasar.multiverse.proton.commands;
 
 import com.itquasar.multiverse.proton.Command;
 import com.itquasar.multiverse.proton.Console;
+import com.itquasar.multiverse.proton.InterCommunication;
 import picocli.CommandLine;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @CommandLine.Command
+// FIXME not working
 public class Env implements Command<Object> {
 
     @CommandLine.Parameters(index = "0")
@@ -40,7 +41,7 @@ public class Env implements Command<Object> {
     }
 
     // FIXME add error handling
-    private static String set(List<String> keys, Object value, Console console, Optional previousOutput) {
+    private static String set(List<String> keys, Object value, Console console, InterCommunication previousOutput) {
         Map<String, Object> parent = console.getEnv();
         int depth = 0;
         while (depth < keys.size() - 1) {
@@ -49,10 +50,10 @@ public class Env implements Command<Object> {
 
         String key = keys.get(keys.size() - 1);
         if (!key.isEmpty()) {
-            if (value.equals("null") || (value.equals("--") && !previousOutput.isPresent())) {
+            if (value.equals("null") || (value.equals("--") && !previousOutput.getResult().isPresent())) {
                 parent.remove(key);
             } else if (value.equals("--")) {
-                parent.put(key, previousOutput.get());
+                parent.put(key, previousOutput.getResult().get());
             } else {
                 parent.put(key, value);
             }
@@ -62,9 +63,9 @@ public class Env implements Command<Object> {
 
     // FIXME add error support
     @Override
-    public Optional invoke(CommandLine commandLine, Console console, Optional<?> previousOutput) {
+    public InterCommunication invoke(CommandLine commandLine, Console console, InterCommunication<?> previousOutput) {
         LOGGER.trace("env {}: {} -> {}", action, keyPath, value);
-        Optional result = null;
+        InterCommunication result = null;
         switch (action) {
 //            case set:
 //                result = Optional.ofNullable(
@@ -80,7 +81,7 @@ public class Env implements Command<Object> {
 //                break;
             default:
                 action = Action.none;
-                result = Optional.empty();//of(console.getEnv());
+                result = InterCommunication.ok();//of(console.getEnv());
         }
         keyPath.clear();
 

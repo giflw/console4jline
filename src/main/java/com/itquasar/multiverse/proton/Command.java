@@ -6,9 +6,7 @@ import org.slf4j.ext.XLoggerFactory;
 import picocli.CommandLine;
 
 import java.lang.reflect.Method;
-import java.util.Optional;
 
-// FIXME its possible to use Callable?
 public interface Command<T> {
 
     XLogger LOGGER = XLoggerFactory.getXLogger(Command.class);
@@ -39,7 +37,7 @@ public interface Command<T> {
                 : CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, this.getClass().getSimpleName());
     }
 
-    Optional<T> invoke(CommandLine commandLine, Console console, Optional<?> previousOutput);
+    InterCommunication<T> invoke(CommandLine commandLine, Console console, InterCommunication<?> previousOutput);
 
     @CommandLine.Command
     class WrappedCommand<T> implements Command<T> {
@@ -51,7 +49,7 @@ public interface Command<T> {
         }
 
         @Override
-        public Optional<T> invoke(CommandLine commandLine, Console console, Optional previousOutput) {
+        public InterCommunication<T> invoke(CommandLine commandLine, Console console, InterCommunication previousOutput) {
             return command.invoke(commandLine, console, previousOutput);
         }
     }

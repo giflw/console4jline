@@ -1,5 +1,6 @@
 package com.itquasar.multiverse.proton.commands
 
+import com.itquasar.multiverse.proton.InterCommunication
 import picocli.CommandLine
 import spock.lang.Specification
 
@@ -14,13 +15,13 @@ class EchoSpec extends Specification {
         def message = "foo bar baz"
 
         when: "invoke command"
-        def result = command.invoke(
+        def interComm = command.invoke(
                 cmdLine,
                 null,
-                Optional.empty()
+                InterCommunication.ok()
         )
 
         then: "check commad result"
-        result.get() == message
+        interComm.result.get() == message
     }
 }

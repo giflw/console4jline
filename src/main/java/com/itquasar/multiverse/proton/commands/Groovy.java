@@ -2,13 +2,13 @@ package com.itquasar.multiverse.proton.commands;
 
 import com.itquasar.multiverse.proton.Command;
 import com.itquasar.multiverse.proton.Console;
+import com.itquasar.multiverse.proton.InterCommunication;
 import groovy.lang.GroovyShell;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 public class Groovy implements Command {
 
@@ -18,7 +18,8 @@ public class Groovy implements Command {
     private List<String> words = new LinkedList<>();
 
     @Override
-    public Optional invoke(CommandLine commandLine, Console console, Optional previousOutput) {
+    // FIXME error handling
+    public InterCommunication invoke(CommandLine commandLine, Console console, InterCommunication previousOutput) {
         if (groovyShell == null) {
             groovyShell = new GroovyShell();
         }
@@ -28,6 +29,6 @@ public class Groovy implements Command {
         Object evaluate = groovyShell.evaluate(
                 StringUtils.join(words, "")
         );
-        return Optional.ofNullable(evaluate);
+        return InterCommunication.of(evaluate);
     }
 }

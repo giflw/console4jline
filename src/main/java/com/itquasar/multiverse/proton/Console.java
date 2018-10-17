@@ -101,7 +101,7 @@ public class Console implements Runnable {
         } catch (EndOfFileException e) {
             LOGGER.debug("Nothing more to read! Exiting!");
             // Force system exit
-            getCommand("exit").ifPresent(it -> it.invoke(null, this, Optional.empty()));
+            getCommand("exit").ifPresent(it -> it.invoke(null, this, InterCommunication.ok()));
         }
         return line;
     }
@@ -122,7 +122,7 @@ public class Console implements Runnable {
         return null;
     }
 
-    private Optional execute(final ParsedLine parsedLine) {
+    private InterCommunication execute(final ParsedLine parsedLine) {
         if (!this.passwordInput.get()) {
             this.lineReader.getHistory().add(parsedLine.line());
 
@@ -149,7 +149,7 @@ public class Console implements Runnable {
 
             LOGGER.trace("Commands: {}", commands);
 
-            Optional previousOutput = Optional.empty();
+            InterCommunication previousOutput = InterCommunication.ok();
             for (String[] commandLine : commands) {
                 CommandLine.ParseResult parseResult = commandManager.getCommandLine().parseArgs(commandLine);
                 if (parseResult.hasSubcommand()) {
@@ -161,7 +161,7 @@ public class Console implements Runnable {
 
             return previousOutput;
         }
-        return Optional.empty();
+        return InterCommunication.ok();
     }
 
     @Override
@@ -172,8 +172,13 @@ public class Console implements Runnable {
             try {
                 ParsedLine parsedLine = this.readParsedLine();
                 if (!parsedLine.word().trim().isEmpty()) {
-                    this.execute(parsedLine).ifPresent(
-                            it -> prettyPrinterManager.prettyPrint(0, PrettyPrinter.DEFAULT_SPACER, writer, it)
+                    // TODO refactor
+                    this.execute(parsedLine).visit(
+                            it ->
+                                    ((InterCommunication) it).getResult().ifPresent(
+                                            obj ->
+                                                    prettyPrinterManager.prettyPrint(0, PrettyPrinter.DEFAULT_SPACER, writer, obj)
+                                    )
                     );
                 }
             } catch (UserInterruptException ex) {
