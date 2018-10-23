@@ -1,14 +1,17 @@
 package com.itquasar.multiverse.proton;
 
+import com.itquasar.multiverse.proton.util.PromptVariables;
+import groovy.util.ConfigObject;
+import groovy.util.ConfigSlurper;
 import org.jline.reader.*;
-import org.jline.utils.AttributedStringBuilder;
+import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.PrintWriter;
-import java.time.LocalDateTime;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -29,13 +32,15 @@ public class Console implements Runnable {
 
     private final Map<String, Object> env = new HashMap();
 
+    private final ConfigObject config;
+
     private int line = 0;
 
-    public Console(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback) {
-        this(commandManager, prettyPrinterManager, lineReader, maskingCallback, new ConsoleOptions());
+    public Console(URL configUrl, CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback) {
+        this(configUrl, commandManager, prettyPrinterManager, lineReader, maskingCallback, new ConsoleOptions());
     }
 
-    public Console(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
+    public Console(URL configUrl, CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader, MaskingCallback maskingCallback, ConsoleOptions consoleOptions) {
         this.lineReader = lineReader;
         this.maskingCallback = new DynamicMaskingCallback(this.passwordInput, maskingCallback);
         this.consoleOptions = consoleOptions;
@@ -52,15 +57,32 @@ public class Console implements Runnable {
             properties.put(key, System.getProperty(key));
         }
         system.put("properties", properties);
+
+        // MUST BE LAST, TO HAVE VARIABLES ACCESSED
+        ConfigSlurper configSlurper = new ConfigSlurper();
+        {
+            Console console = this;
+            configSlurper.setBinding(new HashMap() {{
+                put("_", new PromptVariables(console));
+            }});
+        }
+        this.config = configSlurper.parse(configUrl);
     }
 
+    public ConfigObject getConfig() {
+        return config;
+    }
 
     public ConsoleOptions getOptions() {
         return consoleOptions;
     }
 
     public LineReader getLineReader() {
-        return lineReader;
+        return this.lineReader;
+    }
+
+    public Terminal getTerminal() {
+        return this.lineReader.getTerminal();
     }
 
     public Optional<Command> getCommand(String name) {
@@ -95,7 +117,13 @@ public class Console implements Runnable {
         }
         String line = null;
         try {
-            line = this.lineReader.readLine(prompt(), rigthPrompt(), this.maskingCallback, buffer());
+            ConfigObject prompt = (ConfigObject) config.get("prompt");
+            line = this.lineReader.readLine(
+                    prompt.get("left").toString(),
+                    prompt.get("right").toString(),
+                    this.maskingCallback,
+                    buffer()
+            );
         } catch (UserInterruptException e) {
             LOGGER.debug("User interruption! Exiting!");
         } catch (EndOfFileException e) {
@@ -104,18 +132,6 @@ public class Console implements Runnable {
             getCommand("exit").ifPresent(it -> it.invoke(null, this, InterCommunication.ok()));
         }
         return line;
-    }
-
-    private String rigthPrompt() {
-        return new AttributedStringBuilder()
-                .style(AttributedStyle.DEFAULT.background(AttributedStyle.CYAN).foreground(AttributedStyle.BLACK))
-                .append("[" + LocalDateTime.now() + "]")
-                .style(AttributedStyle.DEFAULT)
-                .toAnsi();
-    }
-
-    private String prompt() {
-        return "[" + (this.line) + "] " + this.lineReader.getTerminal().getName() + " $ ";
     }
 
     private String buffer() {

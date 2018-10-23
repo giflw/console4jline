@@ -42,14 +42,17 @@ public class JagroskShell implements Runnable {
 
     private final Console console;
 
-    public JagroskShell(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader) {
-        this.console = new Console(commandManager, prettyPrinterManager, lineReader, new SimpleMaskingCallback(ATOM));
+    public JagroskShell(URL configUrl, CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader) {
+        this.console = new Console(configUrl, commandManager, prettyPrinterManager, lineReader, new SimpleMaskingCallback(ATOM));
     }
 
     public static void main(String[] args) throws IOException {
+        // FIXME
+        URL configUrl = JagroskShell.class.getResource("/jagrosk-shell.groovy");
+
         Terminal terminal = TerminalBuilder.builder()
                 // FIXME
-                .name("JagroskShell")
+                .name("JaGroSK")
                 .system(true)
                 //.signalHandler(Terminal.SignalHandler.SIG_IGN)
                 //.jna(false) // FIXME make configurable
@@ -66,7 +69,7 @@ public class JagroskShell implements Runnable {
                 .variable(LineReader.HISTORY_FILE, "/tmp/" + terminal.getName().replace(" ", "_") + ".history")
                 .build();
         PrettyPrinterManager prettyPrinterManager = new PrettyPrinterManager();
-        new JagroskShell(commandManager, prettyPrinterManager, lineReader).run();
+        new JagroskShell(configUrl, commandManager, prettyPrinterManager, lineReader).run();
     }
 
     @Override
