@@ -55,6 +55,6 @@
     <logger name="org.jline" level="INFO" additivity="false"/>
 
     <root level="WARNING">
-        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="STDOUT_NOCOLOR"/>
     </root>
 </configuration>
