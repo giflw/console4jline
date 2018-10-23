@@ -14,7 +14,8 @@
 
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <mainClass>${project.groupId}.${project.artifactId}.Proton</mainClass>
+        <executable.mainClass>${project.groupId}.${project.artifactId}.JagroskShell</executable.mainClass>
+        <executable.name>jgsk</executable.name>
 
         <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
@@ -181,8 +182,8 @@
                                 <configuration>
                                     <programs>
                                         <program>
-                                            <id>proton</id>
-                                            <mainClass>${mainClass}</mainClass>
+                                            <id>${executable.name}</id>
+                                            <mainClass>${executable.mainClass}</mainClass>
                                         </program>
                                     </programs>
                                 </configuration>
