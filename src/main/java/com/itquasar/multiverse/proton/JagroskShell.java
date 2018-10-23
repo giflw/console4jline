@@ -18,10 +18,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.logging.LogManager;
 
-public class Proton implements Runnable {
+public class JagroskShell implements Runnable {
 
     public static final Character ATOM = '⚛';
-    private static final XLogger LOGGER = XLoggerFactory.getXLogger(Proton.class);
+    private static final XLogger LOGGER = XLoggerFactory.getXLogger(JagroskShell.class);
 
     // MUST BE THE FIRST BLOCK OF CODE IN THE MAIN CLASS!!!!
     static {
@@ -42,13 +42,14 @@ public class Proton implements Runnable {
 
     private final Console console;
 
-    public Proton(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader) {
+    public JagroskShell(CommandManager commandManager, PrettyPrinterManager prettyPrinterManager, LineReader lineReader) {
         this.console = new Console(commandManager, prettyPrinterManager, lineReader, new SimpleMaskingCallback(ATOM));
     }
 
     public static void main(String[] args) throws IOException {
         Terminal terminal = TerminalBuilder.builder()
-                .name("Proton")
+                // FIXME
+                .name("JagroskShell")
                 .system(true)
                 //.signalHandler(Terminal.SignalHandler.SIG_IGN)
                 //.jna(false) // FIXME make configurable
@@ -61,10 +62,11 @@ public class Proton implements Runnable {
         LineReader lineReader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .completer(new StringsCompleter(commandManager.getComandNames()))
+                // FIXME
                 .variable(LineReader.HISTORY_FILE, "/tmp/" + terminal.getName().replace(" ", "_") + ".history")
                 .build();
         PrettyPrinterManager prettyPrinterManager = new PrettyPrinterManager();
-        new Proton(commandManager, prettyPrinterManager, lineReader).run();
+        new JagroskShell(commandManager, prettyPrinterManager, lineReader).run();
     }
 
     @Override
